@@ -16,7 +16,7 @@ No worries. Plenty of people start here. You'll use VirtualBox (free) and run ev
 - CPU with virtualisation support (most modern CPUs have this)
 - Any OS: Windows, macOS, or Linux
 
-**What hurts first:** RAM. Every VM you spin up eats into it. With 16 GB you can comfortably run 2 to 3 VMs. With 8 GB, you'll be swapping to disk constantly and hating life.
+**What hurts first:** RAM. Every VM you spin up eats into it. With 16 GB you can comfortably run 2 to 3 VMs. With 8 GB, you'll be swapping to disk constantly and hating life. Swap speeds are much SIGNIFICANTLY slower than your RAM - find out more [here](https://www.geeksforgeeks.org/operating-systems/swap-space-in-operating-system/).
 
 ### Path B: I have spare hardware
 

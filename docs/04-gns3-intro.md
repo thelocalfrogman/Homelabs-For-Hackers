@@ -30,7 +30,10 @@ If all you need is two VMs talking to each other, VirtualBox with a host-only ne
 
 GNS3 runs differently depending on your platform. The key difference is how QEMU (the engine that runs your VMs) operates.
 
+**DISCLAIMER:** These instructions are current as of 27/02/2026. Maintainers will endeavour to keep the below instructions up-to-date but software changes all the time. ALWAYS refer to the offical documentation as well as this.
+
 ### Linux Installation (Recommended)
+[Offical GNS3 Linux installation documentation](https://docs.gns3.com/docs/getting-started/installation/linux/).
 
 On Linux, GNS3 runs QEMU/KVM natively on your host. This gives you near-native VM performance since KVM uses hardware virtualisation directly. No extra VM layer needed.
 
@@ -65,12 +68,18 @@ sudo apt install qemu-system-x86 qemu-utils
 When you launch GNS3 for the first time, choose **Run appliances on my local computer**. The local GNS3 server will handle everything, and QEMU VMs will run directly on your hardware with KVM acceleration.
 
 ### Windows Installation
+[Offical GNS3 Windows installation documentation](https://docs.gns3.com/docs/getting-started/installation/windows).
 
-On Windows, QEMU doesn't have access to KVM, so running VMs directly on the host would be painfully slow. Instead, GNS3 uses the **GNS3 VM** — a lightweight Linux VM that runs the GNS3 server and QEMU/KVM inside it. Your Windows GNS3 client connects to this VM as its compute backend.
+The simplest method is via the GNS3 GUI installer. The instructions for this are in the offical documentation linked above and if you're just starting out I would recommend simply doing that. Otherwise you can follow the standalone GNS3 VM instructions below.
 
-You have two options for running the GNS3 VM:
+#### GNS3 VM
+The offical GNS3 VM instructions can be found [here](https://docs.gns3.com/docs/getting-started/installation/download-gns3-vm).
 
-> **Note:** The GNS3 VM can technically run in VirtualBox as well, but VirtualBox doesn't support the nested virtualisation needed for QEMU/KVM to work inside the VM. This means your lab VMs would fall back to software emulation and run extremely slowly. Stick with VMware or Hyper-V.
+On Windows, QEMU doesn't have access to KVM, so running VMs directly on the host can be slow. Instead, GNS3 uses the **GNS3 VM** — a lightweight Linux VM that runs the GNS3 server and QEMU/KVM inside it. Your Windows GNS3 client connects to this VM as its compute backend.
+
+You have two options for running the GNS3 VM on Windows:
+
+> **Note:** The GNS3 VM can technically run in VirtualBox as well, but VirtualBox's nested virtualisation support is limited and less reliable compared to VMware or Hyper-V, which can result in poor performance or KVM failing to initialise inside the GNS3 VM.
 
 **Option A: VMware Workstation (recommended)**
 
@@ -103,7 +112,7 @@ If you're on Windows 10/11 Pro or Enterprise, Hyper-V is built in. Note that Hyp
 
 ## Running VMs in GNS3 with QEMU
 
-GNS3 does have built-in VirtualBox integration — you can link VirtualBox VMs into your topologies using Cloud nodes and host-only adapters. However, this integration is no longer actively supported by the GNS3 team and has been increasingly unreliable across recent versions. For that reason, this guide doesn't cover the VirtualBox method. If you have existing VirtualBox VMs you want to use, you can convert their disk images to qcow2 (covered below) and run them natively in GNS3 through QEMU instead.
+GNS3 still includes VirtualBox integration in current versions, it hasn't been officially deprecated or removed. It's more accurate to say it's been de-prioritised or is less actively maintained, and that QEMU is the recommended approach.
 
 Running VMs directly inside GNS3 using QEMU means your VMs are first-class citizens in the topology — you drag them onto the canvas, connect them to switches and routers, and they just work. No bridging, no host-only adapters, no messing with Cloud nodes.
 
@@ -168,7 +177,6 @@ After creation, select the VM template and click **Edit**:
 - **General**: Set vCPUs (2 is usually enough)
 - **HDD**: Confirm your qcow2 is set as hda
 - **Network**: Set the number of network adapters (1 is fine for most endpoints, more if you need multiple interfaces)
-- **Advanced**: Under additional options, you can add `-cpu host` for best performance with KVM
 
 ### Step 3: Use VMs in your topology
 
@@ -234,7 +242,7 @@ For this guide, we'll assume you're using something like VyOS or a simple Linux 
 
 Start all devices (right-click > Start, or the green play button).
 
-**On the router** (exact commands depend on your router image, this is generic):
+**On the router** (exact commands depend on your router image, this is pseudocode):
 
 ```
 # Interface to LAN A
@@ -326,7 +334,7 @@ Start a packet capture on the link. Send a ping. See what happens. No packets? L
 
 **VM starts but no network:** Verify the number of adapters in the QEMU template matches how many links you've connected. If you've only configured 1 adapter but connected 2 links, the second link won't work.
 
-**VM is extremely slow:** On Linux, verify KVM is being used (`-enable-kvm` should appear in the QEMU command line — check under template Advanced settings). On Windows, verify nested virtualisation is enabled on the GNS3 VM. Without KVM, QEMU falls back to software emulation and performance drops dramatically.
+**VM is extremely slow:** On Linux, verify KVM is being used (`-enable-kvm` should appear in the QEMU command line - check under template Advanced settings). On Windows, verify nested virtualisation is enabled on the GNS3 VM. Without KVM, QEMU falls back to software emulation and performance drops dramatically.
 
 **Console won't open:** If using VNC, make sure no other process is binding the VNC port. Try changing the console type to telnet temporarily to verify the VM is actually running.
 
@@ -359,7 +367,7 @@ Each clone only stores the differences from the base image, saving significant d
 
 **Image location:**
 - **Linux (local server):** Images are stored wherever you point to them, but GNS3 defaults to `~/GNS3/images/QEMU/`
-- **Windows (GNS3 VM):** When you add an image, GNS3 uploads it into the GNS3 VM automatically. Images live inside the VM's filesystem at `/opt/gns3/images/`
+- **Windows (GNS3 VM):** When you add an image, GNS3 uploads it into the GNS3 VM automatically. Images live inside the VM's filesystem at `/opt/gns3/images/QEMU/`
 
 ## What's next?
 

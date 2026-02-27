@@ -205,6 +205,14 @@ Generate some traffic (pings, scans) and watch the logs populate. You should see
 
 This is the start of visibility. You can see what's happening in your range.
 
+### Backing up your firewall config
+OPNsense stores its entire configuration in a single XML file. This means you can back up and restore your firewall setup independently of VM snapshots, which is handy if you want to rebuild on different hardware or share your config between ranges.
+
+The official documentation to backup/restore the config manually as well as automatically can be found [here](https://docs.opnsense.org/manual/backups.html). Keep in mind that if you're keeping snapshot's it's not 100% nesseaery, but it is recommended.
+
+**A note on sensitive data**
+- The config file contains password hashes and potentially certificates. Treat it like you'd treat any sensitive file, so don't commit it to a public repo or leave it sitting in a shared folder.
+
 ## Optional extras
 
 ### VLANs
@@ -222,7 +230,7 @@ Instead of typing IP addresses repeatedly, create aliases:
 - Name: `Attackers`
 - Type: Network
 - Content: `10.10.10.0/24`
-
+<br><br>
 - Name: `Targets`
 - Type: Network
 - Content: `10.10.20.0/24`

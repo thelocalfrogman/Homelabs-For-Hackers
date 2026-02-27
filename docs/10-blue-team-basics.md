@@ -54,9 +54,14 @@ Elasticsearch, Logstash, Kibana. Very powerful, very flexible. Also very complex
 
 Another solid option. Good middle ground between Wazuh and ELK.
 
+**Resources:**
+- [Offical Graylog documentation](https://go2docs.graylog.org/current/downloading_and_installing_graylog/installing_graylog.html)
+
 ### Recommendation
 
-Start with Wazuh. It's designed for security, has sensible defaults, and gets you to "seeing attacks" faster. You can always add Elastic or other tools later.
+Start with Wazuh. It's designed for security, is in my experience the easiest to setup, has sensible defaults, and gets you to "seeing attacks" faster. You can always add Elastic or other tools later.
+
+Keeping that in mind this guide does not include install instructions for Elastic or Graylog. They are more of a beast to setup and in my opinion Wazuh just fit's the best for a homelab scenario to start off with.
 
 ## Setting up Wazuh (basic)
 
@@ -71,23 +76,11 @@ Wazuh provides a pre-built virtual machine:
 
 ### Option B: Install on Ubuntu
 
-For more control:
-
-```bash
-# Add Wazuh repository
-curl -s https://packages.wazuh.com/key/GPG-KEY-WAZUH | gpg --no-default-keyring --keyring gnupg-ring:/usr/share/keyrings/wazuh.gpg --import && chmod 644 /usr/share/keyrings/wazuh.gpg
-echo "deb [signed-by=/usr/share/keyrings/wazuh.gpg] https://packages.wazuh.com/4.x/apt/ stable main" | tee /etc/apt/sources.list.d/wazuh.list
-
-# Install (all-in-one for lab use)
-curl -sO https://packages.wazuh.com/4.7/wazuh-install.sh
-sudo bash wazuh-install.sh -a
-```
-
-Follow the output for credentials and access URL.
+This gives you more control and for the sake of getting the experience, this is the recommend method. This guide does not include specific instructions as they are likely to change between versions - Instead [here](https://documentation.wazuh.com/current/installation-guide/wazuh-server/step-by-step.html) is a link to the official documentation.
 
 ### Install agents on targets
 
-On each Windows/Linux target you want to monitor:
+On each Windows/Linux target you want to monitor you'll go through steps similar to this : **DO NOT FOLLOW THESE EXACTLY - Follow the offical documentation**.
 
 **Linux:**
 ```bash
@@ -110,7 +103,7 @@ Don't try to collect everything. Start with:
 
 These are gold for detecting attacks:
 
-| Log | Why |
+| Windows Security Log | Why |
 |-----|-----|
 | Security (4624, 4625) | Login success/failure |
 | Security (4688) | Process creation |
@@ -159,6 +152,7 @@ Here are concrete things you can detect in your range right now.
 ```bash
 hydra -l admin -P /usr/share/wordlists/rockyou.txt ssh://TARGET-IP
 ```
+Note that you may have to [unzip rockyou.txt](https://www.geeksforgeeks.org/ethical-hacking/how-to-extract-rockyou-txt-gz-file-in-kali-linux/).
 
 **What to look for:**
 - Windows: Event ID 4625 (failed login) repeating, then 4624 (success)
@@ -211,7 +205,7 @@ You've got a working blue team setup when:
 1. **You see events.** Logs are flowing into your SIEM.
 2. **You can search.** Query for a specific IP, user, or time range.
 3. **Alerts fire.** Run an attack, see an alert.
-4. **You can investigate.** From an alert, you can pivot to related events.
+4. **You can investigate.** From an alert, you can pivot to related events and run a full investigation.
 
 ### The triage loop
 

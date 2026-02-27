@@ -79,5 +79,5 @@ Running vulnerable systems on your own isolated network is completely legal. Att
 
 Ready to build? Start with the safety rules (please), then dive into your first build:
 
-1. [Safety and Isolation](02-safety-and-isolation.md)
-2. [VirtualBox Starter Range](03-virtualbox-starter-range.md)
+2. [Safety and Isolation](02-safety-and-isolation.md)
+3. [VirtualBox Starter Range](03-virtualbox-starter-range.md)
