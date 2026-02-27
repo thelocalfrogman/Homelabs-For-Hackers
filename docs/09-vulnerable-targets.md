@@ -4,15 +4,13 @@ These are the machines you practice breaking into. Intentionally vulnerable, leg
 
 ## Rules of engagement
 
-Before we list targets: the rules.
+1. **Isolated networks only.** These targets are full of known vulnerabilities - that's the point. But on the open internet, they'd be [pwned](https://en.wikipedia.org/wiki/Leet#Owned_and_pwned) before you finish reading this sentence. Keep them on host-only or internal networks with absolutely no route out.
 
-1. **Isolated networks only.** These targets have known vulnerabilities. On the internet, they'd be compromised in minutes. Keep them on host-only or internal networks with no route out.
+2. **Your network, your targets.** Only attack things you own or have explicit written permission to test. Everything in this guide is designed to be broken, but only inside your own lab.
 
-2. **Your network, your targets.** Only attack targets you own or have explicit permission to test. The targets in this guide are designed to be attacked, but only in your lab.
+3. **Snapshot before deploying.** Targets get messy fast once you start poking at them. Take a clean snapshot before you do anything so you can reset without the headache of rebuilding from scratch.
 
-3. **Snapshot before deploying.** Targets get messy during attacks. Snapshot clean states so you can reset quickly.
-
-4. **Treat them as compromised.** Don't put real credentials or sensitive data on target VMs. Assume attackers (including future-you) will access everything.
+4. **Treat them as already compromised.** Don't put real passwords, SSH keys, or anything sensitive on target VMs. Assume that everything on these machines will be seen by someone, including future-you forgetting what credentials they left lying around.
 
 ## Safe targets list
 
@@ -70,7 +68,7 @@ Docker is great for quickly spinning up multiple web app targets without managin
 
 ### OVA imports (full VMs)
 
-Most VulnHub and similar targets come as OVA files.
+Most VulnHub and similar targets come as OVA files to be widely compatible.
 
 **VirtualBox:**
 File > Import Appliance > Select OVA > Import
@@ -130,6 +128,7 @@ If Nmap shows open ports matching what you deployed, you're good.
 - Check port number
 - Check the service is actually running
 - Try curl from command line to isolate browser issues
+- Try both `http` and `https`
 
 ## Reset plan
 
@@ -171,9 +170,9 @@ VirtualBox and Proxmox both support linked clones from a snapshot. Deploy a clea
 
 ## Don't hoard targets
 
-It's tempting to download 50 VulnHub VMs "for later." Resist this. Deploy one target, learn from it thoroughly, then move on. A focused lab beats a cluttered one!
+It's tempting to download 50 VulnHub VMs for later. Try to resist the dark side. Deploy one target, learn from it thoroughly, then move on. A focused lab beats a cluttered one!
 
-You can always download more when you need them. (Do as I say, not as I do)
+You can always download more when you need them. (Do as I say, not as I do).
 
 ## What's next?
 

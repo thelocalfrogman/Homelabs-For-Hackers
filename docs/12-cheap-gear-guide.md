@@ -1,4 +1,4 @@
-# Cheap Gear Guide - In need of major review
+# Cheap Gear Guide
 
 You don't need new hardware to run a solid cyber range. Second-hand business desktops are everywhere, they're cheap, and they're perfect for this. Here's what to look for.
 
@@ -13,7 +13,9 @@ Before buying anything, check the maximum RAM the motherboard supports. A $50 de
 Check the manufacturer's specs. Search "MODEL NUMBER max ram" and you'll usually find the answer.
 
 **Good:** 32 GB or higher max RAM
+
 **Acceptable:** 16 GB max (fine for starting out)
+
 **Avoid:** 8 GB max (too limiting if the only machine in your range)
 
 ### SSD is non-negotiable
@@ -32,7 +34,9 @@ Older CPUs work but have drawbacks:
 - Potentially no longer receiving microcode updates
 
 **Good:** Intel 6th gen (Skylake) or newer, AMD Ryzen
+
 **Acceptable:** Intel 4th/5th gen (Haswell/Broadwell)
+
 **Avoid:** Anything older unless it's basically free
 
 Check virtualisation support: VT-x/VT-d for Intel, AMD-V for AMD. Almost all business desktops from the last decade have this.
@@ -65,9 +69,9 @@ For a dedicated Proxmox box, SFF or mini tower is usually the sweet spot.
 
 If you're upgrading an existing machine or buying something that needs work:
 
-### 1. SSD first
+### 1. SSD first (If your machine doesn't have one)
 
-The single biggest improvement. If the machine doesn't have an SSD, fix this before anything else.
+The single biggest improvement. *If the machine doesn't have an SSD, fix this before anything else.*
 
 - 500 GB SATA SSD: $90 to $120
 - 1 TB SATA SSD: $170 to $200
@@ -116,7 +120,7 @@ Good models to look for:
 
 | Brand | Models | Notes |
 |-------|--------|-------|
-| HP | EliteDesk 800 G2/G3/G4 | Reliable, good expansion |
+| HP | EliteDesk 800 G2/G3/G4 | Reliable, can have limited expansion |
 | Dell | OptiPlex 3040/5040/7040 and newer | Everywhere, well-supported |
 | Lenovo | ThinkCentre M710/M720/M910 | Solid build quality |
 

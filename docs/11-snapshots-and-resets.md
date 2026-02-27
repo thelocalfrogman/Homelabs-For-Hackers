@@ -8,19 +8,19 @@ Snapshot at milestones, not randomly. Here's a framework that works:
 
 ### VirtualBox / VMware snapshot points
 
-| Snapshot name | When to take it | What it captures |
+| Snapshot name (Suggestion) | When to take it | What it captures |
 |---------------|-----------------|------------------|
-| `01-clean-install` | Right after OS installation | Base OS, nothing else |
-| `02-network-configured` | After setting static IP and hostname | Networking ready |
-| `03-services-installed` | After installing target services | SSH, web server, etc. |
-| `04-lab-ready` | After any lab-specific setup | Ready for scenario |
-| `05-pre-experiment` | Before trying something risky | Safety net |
+| `clean-install` | Right after OS installation | Base OS, nothing else |
+| `network-configured` | After setting static IP and hostname | Networking ready |
+| `services-installed` | After installing target services | SSH, web server, etc. |
+| `lab-ready` | After any lab-specific setup | Ready for scenario |
+| `pre-experiment` | Before trying something risky | Safety net |
 
 ### Proxmox snapshot points
 
 Same concept, but Proxmox handles snapshots differently (they're faster and more efficient).
 
-| Snapshot name | When to take it |
+| Snapshot name (Suggestion)| When to take it |
 |---------------|-----------------|
 | `base` | Clean install |
 | `configured` | Network and services set up |
@@ -97,9 +97,10 @@ After a lab scenario, you want to reset everything quickly. Here's how.
 
 ### The manual way
 
-Restore each VM's snapshot individually. Fine for 2 to 3 VMs, tedious for more.
+Restore each VM's snapshot individually via the GUI interface.
 
-### The scripted way (VirtualBox/VMware)
+### The scripted way (VirtualBox)
+You can find the offical documentation for the VBoxManage command [here](https://www.virtualbox.org/manual/ch08.html).
 
 Create a reset script:
 
@@ -147,7 +148,7 @@ echo "Range reset complete."
 
 Both VirtualBox/VMware and Proxmox support linked clones. The idea:
 
-1. Create a "golden image" VM
+1. Create a "[golden image](https://www.redhat.com/en/topics/linux/what-is-a-golden-image)" VM
 2. Snapshot it
 3. Create linked clones from that snapshot
 4. Attack the clones

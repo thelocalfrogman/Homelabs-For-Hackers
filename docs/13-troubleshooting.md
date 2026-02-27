@@ -1,6 +1,8 @@
 # Troubleshooting
 
-Things will break. This page covers the most common problems and how to fix them.
+Things will break. This page covers the most common problems and how to fix them. 
+
+**DISCLAIMER:** This page contains problems and solutions that I did not personally face or solve. Some are other people's issues and their reported solves for them. These have been added in an attempt to give you the most useful expeirnece. If you face one of these issues and a fix from this page does not work then let me know and seek help for the issue on the official documentation/another platform. Feel free to contribute issues to this page as you face them!
 
 ## No connectivity between VMs
 
@@ -91,7 +93,7 @@ The WAN interface has no IP or can't reach the internet.
 ### Quick checks
 
 1. **Is the interface assigned correctly?**
-   - Console menu option 1: Check interface assignments
+   - Console menu: Check interface assignments
    - WAN should be the interface connected to your management network or internet
 
 2. **DHCP or static?**
@@ -168,6 +170,7 @@ Your Wazuh/SIEM agent is installed but not appearing in the manager.
    # Windows
    Get-Service WazuhSvc
    ```
+   If these commands do not work, verify they are correct for your version in the official documentation.
 
 2. **Can the agent reach the manager?**
    ```bash
@@ -176,15 +179,7 @@ Your Wazuh/SIEM agent is installed but not appearing in the manager.
    nc -zv MANAGER-IP 1515
    ```
 
-3. **Is the manager address correct?**
-   ```bash
-   # Linux
-   cat /var/ossec/etc/ossec.conf | grep -A2 server
-   ```
-   
-   Look for the `<address>` field.
-
-4. **Firewall blocking?**
+3. **Firewall blocking?**
    - Agent needs to reach manager on ports 1514 and 1515
    - Check both host firewalls and any network firewalls
 
@@ -300,7 +295,7 @@ When something's broken:
 3. **Check logs.** Every system has logs. Read them.
 4. **Test layer by layer.** Can you ping? Can you reach the port? Can the service respond?
 5. **Change one thing at a time.** If you change five things and it starts working, you don't know which one fixed it.
-6. **Snapshot before experimenting.** Always.
+6. **Snapshot before experimenting!**
 
 ## Still stuck?
 

@@ -27,8 +27,8 @@ No internet access for the VMs (unless you temporarily enable it). No connection
 ## Prerequisites
 
 - VirtualBox installed ([download here](https://www.virtualbox.org/wiki/Downloads))
-- Kali Linux ISO downloaded
-- Ubuntu Server or Desktop ISO downloaded (or Windows evaluation ISO)
+- Kali Linux [ISO downloaded](https://www.kali.org/get-kali/#kali-installer-images)
+- [Ubuntu Server](https://ubuntu.com/download/server) or [Desktop ISO](https://ubuntu.com/download/desktop) downloaded (or [Windows evaluation ISO](https://www.microsoft.com/en-us/software-download/windows11))
 - At least 16 GB RAM total on your host
 - At least 60 GB free disk space
 
@@ -43,8 +43,8 @@ First, set up the isolated network your VMs will share.
 5. Configure it:
    - IPv4 Address: `192.168.56.1`
    - IPv4 Network Mask: `255.255.255.0`
-6. Click the **DHCP Server** tab
-7. Either enable DHCP with a sensible range (e.g., `192.168.56.100` to `192.168.56.200`) or disable it if you prefer static IPs
+6. If you would like a [DHCP](https://en.wikipedia.org/wiki/Dynamic_Host_Configuration_Protocol) Server via VirtualBox, instructions are [here](https://forums.virtualbox.org/viewtopic.php?t=104570).
+   - For now, I recommend not worrying about it and using static IPs which will be explained later.
 8. Click **Apply**
 
 You now have an isolated network called something like `vboxnet0`. Remember this name.
@@ -183,6 +183,7 @@ Now you have an SSH service to scan and attempt to brute force.
 ### Snapshot
 
 Name: `clean-target`
+
 Description: "Fresh Ubuntu, SSH enabled, weak creds"
 
 ## Step 4: Verify connectivity
@@ -219,7 +220,7 @@ If you want to start seeing attacks from the defender's perspective, add a third
 
 - Another Ubuntu box running [Wazuh](https://wazuh.com/) agent and manager
 - A lightweight syslog server
-- An ELK stack if you have the RAM to spare
+- An [ELK stack](https://www.geeksforgeeks.org/software-engineering/what-is-elastic-stack-and-elasticsearch/) if you have the RAM to spare
 
 See [Blue Team Basics](10-blue-team-basics.md) for details.
 
