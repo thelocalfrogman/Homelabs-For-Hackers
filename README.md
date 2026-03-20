@@ -40,7 +40,23 @@ Starting with nothing but VirtualBox on your laptop, you'll work your way up to:
 
 ## Safety warning
 
-This bit matters. Read it twice.
+This bit matters. Don't skip it!
+
+<!-- 
+  ctf{stage2}
+  Nice. You read the source.
+  
+  Fragment [2/4]: "range"
+  
+  Next: I gave a talk at a conference in a regional Victorian city.
+  The talk was about building something with almost nothing.
+  Find the conference, find the city, and combine them:
+  
+  echo "CONFERENCE_CITY" | md5sum
+  
+  Take the first 8 characters of the hash.
+  Then visit: https://georgeferres.com/ctf/[first-8-chars].html
+-->
 
 **Never expose vulnerable machines to the internet.** The targets in this repo are intentionally broken. They will get [owned](https://en.wikipedia.org/wiki/Owned_(slang)) within minutes if they're exposed. Keep everything on isolated networks. If you're not sure whether something is isolated, assume it isn't and fix that first.
 
