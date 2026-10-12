@@ -102,20 +102,31 @@ Restore each VM's snapshot individually via the GUI interface.
 ### The scripted way (VirtualBox)
 You can find the offical documentation for the VBoxManage command [here](https://www.virtualbox.org/manual/ch08.html).
 
-Create a reset script:
+Create a reset script. The important bit is that it **stops if a snapshot is missing** rather than cheerfully starting a VM in the wrong state and telling you the reset worked. A reset helper that lies to you is worse than no helper.
 
 ```bash
 #!/bin/bash
-# reset-range.sh
+# reset-range.sh — restore each VM to a named snapshot, fail safe.
+set -euo pipefail
 
 VMS=("range-kali" "range-target-01" "range-target-02")
 SNAPSHOT="lab-ready"
 
 for vm in "${VMS[@]}"; do
+    # Does the VM exist?
+    if ! VBoxManage showvminfo "$vm" >/dev/null 2>&1; then
+        echo "ERROR: VM '$vm' not found. Aborting." >&2
+        exit 1
+    fi
+    # Does the snapshot exist? Stop here if not — do NOT start the VM.
+    if ! VBoxManage snapshot "$vm" list 2>/dev/null | grep -qF "Name: $SNAPSHOT"; then
+        echo "ERROR: snapshot '$SNAPSHOT' not found on '$vm'. Aborting before any damage." >&2
+        exit 1
+    fi
     echo "Restoring $vm to $SNAPSHOT..."
-    VBoxManage controlvm "$vm" poweroff 2>/dev/null
+    VBoxManage controlvm "$vm" poweroff 2>/dev/null || true   # ok if already off
     sleep 2
-    VBoxManage snapshot "$vm" restore "$SNAPSHOT"
+    VBoxManage snapshot "$vm" restore "$SNAPSHOT"             # exits non-zero on failure (set -e stops us)
     VBoxManage startvm "$vm" --type headless
 done
 
@@ -124,21 +135,29 @@ echo "Range reset complete."
 
 Run it: `./reset-range.sh`
 
+> **Why the guards?** `VBoxManage snapshot ... restore` returns a non-zero exit code if the snapshot doesn't exist (exit 1 when the snapshot is missing, 0 when it exists). Without `set -e` and the explicit checks, the original loop would print an error, ignore it, start the VM anyway, and still say "Range reset complete." A ready-to-run copy of this script lives at [`labs/scripts/reset-range-vbox.sh`](../labs/scripts/reset-range-vbox.sh).
+
 ### The scripted way (Proxmox)
 
 ```bash
 #!/bin/bash
-# reset-range.sh
+# reset-range.sh (Proxmox) — restore each VM to a named snapshot, fail safe.
+set -euo pipefail
 
 VMS=(100 101 102)  # VM IDs
 SNAPSHOT="lab-ready"
 
 for vmid in "${VMS[@]}"; do
+    # Confirm the snapshot exists before touching the VM.
+    if ! qm listsnapshot "$vmid" 2>/dev/null | grep -qw "$SNAPSHOT"; then
+        echo "ERROR: snapshot '$SNAPSHOT' not found on VM $vmid. Aborting." >&2
+        exit 1
+    fi
     echo "Restoring VM $vmid to $SNAPSHOT..."
-    qm stop $vmid 2>/dev/null
+    qm stop "$vmid" 2>/dev/null || true
     sleep 2
-    qm rollback $vmid $SNAPSHOT
-    qm start $vmid
+    qm rollback "$vmid" "$SNAPSHOT"   # non-zero exit stops the script via set -e
+    qm start "$vmid"
 done
 
 echo "Range reset complete."

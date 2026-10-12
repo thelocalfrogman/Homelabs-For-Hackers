@@ -6,6 +6,14 @@ Your attacker VM is where you run offensive tools. It needs to be functional, no
 
 The two most common choices. Both are Debian-based, both come with security tools preinstalled.
 
+![Kali Linux XFCE desktop](../assets/screenshots/kali/02-desktop.png)
+
+*A freshly booted Kali Linux (XFCE) desktop, from the official prebuilt VirtualBox image (Kali 2026.2).*
+
+![Kali Linux login screen](../assets/screenshots/kali/01-login.png)
+
+*The Kali login screen. On the official prebuilt image the default credentials are `kali` / `kali`.*
+
 ### Kali Linux
 
 The default choice for most people. Maintained by Offensive Security, well-documented, huge community.
@@ -79,6 +87,14 @@ Kali and Parrot come with hundreds of tools. You'll use maybe 20 of them regular
 | `tmux` / `screen` | Terminal multiplexing |
 
 Everything else you can install when you need it. Don't waste time "setting up" tools you've never heard of and do your best to spend your time in labs learning concepts, not syntax.
+
+![Kali applications menu organised by MITRE-style categories](../assets/screenshots/kali/03-tools-menu.png)
+
+*Kali's application menu groups tools by category (01 Reconnaissance, 08 Credential Access, 12 Command and Control, and so on), which maps loosely onto the attack lifecycle.*
+
+![nmap service scan running in a Kali terminal against a lab target](../assets/screenshots/kali/04-nmap-scan.png)
+
+*`nmap -sV` run from Kali against a lab host on the isolated range network.*
 
 ## Safety: Keep attacker on range networks only
 

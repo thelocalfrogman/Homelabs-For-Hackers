@@ -30,6 +30,8 @@ Generate security-relevant events on a Windows system, find them in Event Viewer
 
 For this lab, most work happens directly on the Windows VM. Kali is optional.
 
+> **A note on addresses.** The `10.10.10.x` addresses here follow the segmented scheme in [Network Design and Segmentation](../../docs/07-network-design-and-segmentation.md). On the simple [VirtualBox starter range](../../docs/03-virtualbox-starter-range.md) your host-only network is `192.168.56.0/24` instead, so substitute your Windows VM's actual IP for `10.10.10.20`.
+
 ## Build steps
 
 ### Step 1: Configure Windows audit policy
@@ -58,6 +60,10 @@ auditpol /set /subcategory:"User Account Management" /success:enable /failure:en
 
 Open Event Viewer: `Win + R`, type `eventvwr.msc`
 
+![Windows Event Viewer open on the local machine](../../assets/screenshots/windows/04-event-viewer.png)
+
+*Event Viewer. The Security log lives under **Windows Logs > Security**.*
+
 Navigate to: Windows Logs > Security
 
 You should see events. If it's empty, the audit policy isn't applied yet (try rebooting).
@@ -78,14 +84,16 @@ Lock the screen (`Win + L`), then try logging in with wrong passwords a few time
 
 **Method 2: Remote failed logins (if Kali available)**
 
-From Kali:
+From Kali, use **NetExec** (`nxc`). It's the actively maintained successor to CrackMapExec, which was archived in 2023; `crackmapexec` no longer ships in current Kali, so use `nxc` instead (same syntax). NetExec is in Kali's repos (`sudo apt install netexec`) on 2024.2 and later.
 
 ```bash
-# Try SSH (if enabled) or SMB with wrong creds
-crackmapexec smb 10.10.10.20 -u administrator -p wrongpassword1
-crackmapexec smb 10.10.10.20 -u administrator -p wrongpassword2
-crackmapexec smb 10.10.10.20 -u administrator -p wrongpassword3
+# Try SMB with wrong creds (each failed attempt should log Event ID 4625 on the target)
+nxc smb 10.10.10.20 -u administrator -p wrongpassword1
+nxc smb 10.10.10.20 -u administrator -p wrongpassword2
+nxc smb 10.10.10.20 -u administrator -p wrongpassword3
 ```
+
+> If you're on an older Kali that still has `crackmapexec`, the command is identical with `crackmapexec` in place of `nxc`. New installs should use `nxc`.
 
 **Finding the events:**
 
@@ -114,6 +122,10 @@ In Event Viewer, look for:
 
 **What you should see:** The new user creation and the addition to Administrators group, with timestamps.
 
+![Windows Security events 4720 and 4732 from creating the hacker admin user](../../assets/screenshots/windows/05-new-admin-user-4720-4732.png)
+
+*On Windows 10 22H2, creating `hacker` and adding it to Administrators produces Event ID **4720** (user account created) and **4732** (member added to a security-enabled local group).*
+
 ### Activity 3: Run suspicious commands
 
 Attackers run commands to understand the system. Let's generate some.
@@ -138,6 +150,10 @@ If process creation auditing is enabled, look for Event ID 4688.
 Navigate to: Windows Logs > Security, filter for 4688.
 
 **What you should see:** Each command execution logged (though command line content depends on your audit config).
+
+![Windows Event ID 4688 process-creation events and 4104 PowerShell script-block events](../../assets/screenshots/windows/03-events-process-powershell.png)
+
+*With process-creation auditing on, each command produces Event ID **4688**; with script-block logging on, PowerShell produces **4104**. (Captured from a real unattended Windows 10 install.)*
 
 ### Activity 4: Run suspicious PowerShell
 

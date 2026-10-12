@@ -82,18 +82,34 @@ This gives you more control and for the sake of getting the experience, this is 
 
 On each Windows/Linux target you want to monitor you'll go through steps similar to this : **DO NOT FOLLOW THESE EXACTLY - Follow the offical documentation**.
 
-**Linux:**
+**Linux (Debian/Ubuntu):** grab the current agent `.deb` (check the latest version on the [packages list](https://documentation.wazuh.com/current/installation-guide/packages-list.html); it was **4.14.8** at the time of writing) and install it pointed at your manager's IP:
 ```bash
-curl -so wazuh-agent.deb https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.7.0-1_amd64.deb
-sudo WAZUH_MANAGER='MANAGER-IP' dpkg -i wazuh-agent.deb
-sudo systemctl enable wazuh-agent
-sudo systemctl start wazuh-agent
+# Replace the version if a newer one is out, and MANAGER-IP with your Wazuh manager's address
+curl -so wazuh-agent.deb https://packages.wazuh.com/4.x/apt/pool/main/w/wazuh-agent/wazuh-agent_4.14.8-1_amd64.deb
+sudo WAZUH_MANAGER='MANAGER-IP' WAZUH_AGENT_NAME="$(hostname)" dpkg -i wazuh-agent.deb
+sudo systemctl daemon-reload
+sudo systemctl enable --now wazuh-agent
 ```
+The agent auto-enrols: you should see `Valid key received` and `Connected to the server (...:1514/tcp)` in `/var/ossec/logs/ossec.log`, and the host then appears under **Endpoints** in the dashboard.
 
 **Windows:**
-Download the MSI from Wazuh, run installer, point at manager IP.
+Download the MSI from Wazuh, run the installer (or install silently), and point it at the manager IP. The agent then shows up under **Endpoints**.
+
+
+
+![Wazuh dashboard overview with security modules](../assets/screenshots/wazuh/03-overview-dashboard.png)
+
+*The Wazuh dashboard overview: agents summary, last-24-hours alerts, and the security modules (Threat Hunting, MITRE ATT&CK, vulnerability detection, and more).*
 
 Once agents check in, you'll start seeing logs in the Wazuh dashboard.
+
+![Wazuh Endpoints page showing the enrolled hfhlab-ubuntu-target agent, active](../assets/screenshots/wazuh/05-agents-enrolled.png)
+
+*A real enrolled agent: `hfhlab-ubuntu-target` (Ubuntu 24.04.5, Wazuh v4.14.8), status active.*
+
+![Wazuh Deploy new agent wizard](../assets/screenshots/wazuh/04-deploy-agent-wizard.png)
+
+*The Deploy-new-agent wizard (Endpoints > Deploy new agent) generates the exact install command for Linux/Windows/macOS. Use the manager's IP as the server address.*
 
 ## What to collect first
 
@@ -160,17 +176,26 @@ Note that you may have to [unzip rockyou.txt](https://www.geeksforgeeks.org/ethi
 
 Wazuh alerts on brute force patterns automatically.
 
+![Wazuh Threat Hunting dashboard showing authentication-failure alerts from the brute force](../assets/screenshots/wazuh/06-threat-hunting-detections.png)
+
+*A bounded SSH brute force against the target produced **13 authentication-failure** and 19 authentication-success alerts, mapped to MITRE **Password Guessing** / **SSH**, attributed to the `hfhlab-ubuntu-target` agent. This is the brute-force detection firing with real telemetry.*
+
 ### 3. Suspicious PowerShell
 
 **What it looks like:** Encoded commands, download cradles, execution policy bypasses.
 
-**How to generate:** On a Windows target, run:
+**How to generate:** On a Windows target, run these (safe, self-contained) examples. The first builds a real Base64-encoded command and runs it with `-EncodedCommand`; the second is a benign execution-policy-bypass invocation:
 ```powershell
-powershell -enc BASE64STRING
-powershell -ep bypass -c "IEX(command)"
+# Build and run a real encoded command (no external download, just prints text)
+$cmd = "Write-Host 'encoded-command test'"
+$enc = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
+powershell.exe -EncodedCommand $enc
+
+# Execution-policy bypass running a harmless command
+powershell.exe -ExecutionPolicy Bypass -Command "Get-Process | Select-Object -First 3"
 ```
 
-**What to look for:** PowerShell script block logging (Event ID 4104) shows the actual commands. Look for `-enc`, `-ep bypass`, `IEX`, `DownloadString`.
+**What to look for:** PowerShell script block logging (Event ID 4104) shows the actual decoded commands. Look for `-enc`/`-EncodedCommand`, `-ExecutionPolicy Bypass`, `IEX`, `DownloadString`. With script-block logging enabled, these show up as 4104 events on Windows 10.
 
 ### 4. New admin user
 
@@ -245,4 +270,4 @@ With visibility in place:
 
 - [Run lab scenarios and watch them in your SIEM](../labs/README.md)
 - [Understand snapshots for quick resets](11-snapshots-and-resets.md)
-- [Tune your detection rules as you learn](keep practising)
+- Tune your detection rules as you learn (keep practising)

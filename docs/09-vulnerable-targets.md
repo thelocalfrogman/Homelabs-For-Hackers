@@ -40,7 +40,8 @@ These are well-known, intentionally vulnerable systems designed for learning.
 | Target | What it teaches | Format |
 |--------|-----------------|--------|
 | [Windows Evaluation ISOs](https://www.microsoft.com/en-us/evalcenter/) | Real Windows, 90-day trial | ISO |
-| [Yourfirewall Windows VMs](https://yourfirewall.io/) | Pre-configured vulnerable Windows | VM images |
+| [GOAD (Game of Active Directory)](https://github.com/Orange-Cyberdefense/GOAD) | Vulnerable Windows Active Directory lab | Build scripts (Vagrant/Ansible) |
+| [DetectionLab](https://github.com/clong/DetectionLab) | Pre-wired Windows + logging/detection lab | Build scripts |
 | [YOURLS](https://yourls.org/) | URL shortener with known vulns | PHP app |
 
 For Windows, the easiest approach is grabbing evaluation ISOs from Microsoft, installing them, then intentionally weakening them (enable SMBv1, create weak passwords, install vulnerable services).
@@ -52,17 +53,52 @@ For Windows, the easiest approach is grabbing evaluation ISOs from Microsoft, in
 If Docker is installed on a Linux VM:
 
 ```bash
-# DVWA
-docker run -d -p 80:80 --name dvwa vulnerables/web-dvwa
-
-# Juice Shop
+# Juice Shop (works standalone)
 docker run -d -p 3000:3000 --name juiceshop bkimminich/juice-shop
 
-# WebGoat
-docker run -d -p 8080:8080 --name webgoat webgoat/webgoat
+# WebGoat (served under /WebGoat, also exposes WebWolf on 9090)
+docker run -d -p 8080:8080 -p 9090:9090 --name webgoat webgoat/webgoat
 ```
 
-Access via browser: `http://TARGET-IP:PORT`
+Access via browser: Juice Shop at `http://TARGET-IP:3000`, and WebGoat at `http://TARGET-IP:8080/WebGoat` (the login page is **not** at the site root).
+
+**DVWA needs a database.** The old all-in-one `vulnerables/web-dvwa` image is years out of date. The maintained image is `ghcr.io/digininja/dvwa`, and it does **not** bundle a database, so a single `docker run` just throws a connection error. Use Docker Compose to run the app and a MariaDB together:
+
+```yaml
+# dvwa-compose.yml
+name: dvwa
+services:
+  dvwa:
+    image: ghcr.io/digininja/dvwa:latest
+    depends_on: [db]
+    environment:
+      DB_SERVER: db
+      DB_DATABASE: dvwa
+      DB_USER: dvwa
+      DB_PASSWORD: p@ssw0rd
+    ports: ["80:80"]
+  db:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: dvwa-root
+      MYSQL_DATABASE: dvwa
+      MYSQL_USER: dvwa
+      MYSQL_PASSWORD: p@ssw0rd
+```
+
+```bash
+docker compose -f dvwa-compose.yml up -d
+```
+
+Then browse to `http://TARGET-IP/`, open **Setup / Reset DB**, click **Create / Reset Database** once, and log in with `admin` / `password`. New DVWA defaults the security level to *impossible*, so set it to **Low** under **DVWA Security** for the lab exercises. (A ready-to-run copy of this compose file is at [`labs/webapp-range/files/dvwa-compose.yml`](../labs/webapp-range/files/dvwa-compose.yml).)
+
+![OWASP Juice Shop running in a container](../assets/screenshots/webapp-range/juice-shop-home.png)
+
+*OWASP Juice Shop on port 3000.*
+
+![WebGoat login page served under the /WebGoat path](../assets/screenshots/webapp-range/webgoat-login.png)
+
+*WebGoat is served at `http://TARGET-IP:8080/WebGoat` (not the site root) and also exposes WebWolf on port 9090.*
 
 Docker is great for quickly spinning up multiple web app targets without managing full VMs for each.
 
@@ -144,11 +180,15 @@ Snapshot clean state after deployment. Revert when done.
 
 ### Option 2: Rebuild from script
 
-For Docker targets:
+For Docker targets, the quickest reset is in the app itself: **Setup / Reset DB > Create / Reset Database**. To rebuild the containers from scratch (clearing the database volume too):
 ```bash
-docker stop dvwa && docker rm dvwa
-docker run -d -p 80:80 --name dvwa vulnerables/web-dvwa
+# DVWA (compose from above): -v also removes the database volume
+docker compose -f dvwa-compose.yml down -v && docker compose -f dvwa-compose.yml up -d
+
+# Juice Shop / WebGoat (stateless enough to just recreate)
+docker rm -f juiceshop && docker run -d -p 3000:3000 --name juiceshop bkimminich/juice-shop
 ```
+Note: for DVWA, `docker rm` of just the app container does **not** reset the database, the data lives in the DB container's volume, so use `down -v` (or the in-app Create/Reset DB) to get a truly clean state.
 
 For VMs, keep the OVA and re-import. Or maintain a clone that stays clean.
 

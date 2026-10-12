@@ -42,15 +42,42 @@ CPU is usually fine. Most old desktops have enough cores for a starter range.
 1. Download the Proxmox VE ISO from [proxmox.com/en/downloads](https://www.proxmox.com/en/downloads)
 2. Write it to a USB drive (use Rufus on Windows, `dd` on Linux, or Balena Etcher anywhere)
 3. Boot from the USB
-4. Follow the installer. It's straightforward.
+4. Follow the installer (the **graphical** installer needs a mouse; the **Terminal UI** option is keyboard-only if you prefer). It's straightforward.
+   - Accept the EULA
    - Select the target disk (this will be wiped)
    - Set your country, timezone, keyboard
-   - Set a root password and email (email can be fake for home use)
-   - Configure networking (static IP recommended)
+   - Set a root password and an email. On current Proxmox (9.x) the email must be **syntactically valid** and is **not allowed to be the default/placeholder** (`mail@example.invalid` and reserved domains like `.invalid`/`.example` are rejected). Use something like `admin@yourdomain.tld`.
+   - Configure networking: set the management interface, hostname (FQDN), static IP/CIDR, gateway and DNS. For a lab, put the management IP on the same subnet as the host-only network you'll reach it from (e.g. `192.168.56.5/24`).
 5. Reboot when complete
 6. Access the web interface at `https://YOUR-IP:8006`
 
-Accept the self-signed certificate warning. Log in as `root` with the password you set.
+What the installer screens look like, in order:
+
+![Proxmox VE installer boot menu](../assets/screenshots/proxmox/01-boot-menu.png)
+
+*The Proxmox VE 9.2 installer boot menu (Graphical, or Terminal UI for keyboard-only).*
+
+![Proxmox installer target disk selection](../assets/screenshots/proxmox/03-target-disk.png)
+
+*Pick the target disk (it will be wiped).*
+
+![Proxmox installer network configuration](../assets/screenshots/proxmox/06-network.png)
+
+*The network step: management interface, hostname, static IP/CIDR, gateway and DNS.*
+
+![Proxmox installer summary before install](../assets/screenshots/proxmox/07-summary.png)
+
+*The summary screen. Check the values, then Install.*
+
+Once it reboots, accept the self-signed certificate warning and log in at `https://YOUR-IP:8006` as `root` (realm "Linux PAM") with the password you set:
+
+![Proxmox VE web login page](../assets/screenshots/proxmox/09-web-login.png)
+
+*The Proxmox web login. Realm is "Linux PAM standard authentication".*
+
+![Proxmox VE datacenter dashboard](../assets/screenshots/proxmox/10-datacenter-dashboard.png)
+
+*The datacenter view after logging in. The "no valid subscription" notice is normal for the free community repo.*
 
 ## Network bridges explained
 
@@ -113,6 +140,10 @@ Your firewall VM connects to all of them and controls what can talk to what.
    - Network: Select your bridge (e.g., `vmbr1`)
 4. Finish and start the VM
 5. Click **Console** to see the VM's display and complete installation
+
+![Proxmox Create Virtual Machine wizard](../assets/screenshots/proxmox/12-create-vm-wizard.png)
+
+*The Create VM wizard (General / OS / System / Disks / CPU / Memory / Network / Confirm). Pick your bridge on the Network tab.*
 
 ## Backup and restore basics
 

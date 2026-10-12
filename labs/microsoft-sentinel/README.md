@@ -60,15 +60,14 @@ Three data sources, one workspace, one analyst (you). Once you have telemetry fl
 
 Hardware and accounts you need before you start:
 
-- A machine that can run a Windows 11 VM (16GB RAM, ~80GB free disk is comfortable)
+- A machine that can run a Windows 10/11 VM (16GB RAM, ~80GB free disk is comfortable)
 - A virtualisation host of your choice (Proxmox, VMware, Hyper-V, or VirtualBox all work)
-- A throwaway email address for the Microsoft 365 Developer tenant (do not use your personal Microsoft account)
-- A working credit card for the Azure free trial (you will not be charged if you stay inside the free tier limits described in this guide, but Microsoft requires one on file)
+- **Eligibility for a Microsoft 365 E5 developer sandbox** if you want the Defender/Entra signals, this is **no longer free-for-anyone** (see [The cost question](#the-cost-question-answered-honestly) below; you'll typically need an active Visual Studio Pro/Enterprise subscription or another qualifying program, plus a billing account). If you don't qualify, you can still do a trimmed version of the lab, see the note under step 1.1.
+- A working credit card for the Azure free account (you won't be charged inside the free-tier limits described below, but Microsoft requires one on file, and it is required for the E5 sandbox too)
 
-You do **not** need:
+You do **not** necessarily need:
 
-- An existing Azure subscription
-- A paid M365 licence
+- An existing *paid* Azure subscription (the free account is enough to start)
 - A domain name
 - Windows Server
 
@@ -78,11 +77,12 @@ You do **not** need:
 
 Sentinel pricing is scary if you do not know where the cliffs are. Here is what you need to know:
 
-- **Microsoft 365 Developer Program** gives you a free E5 tenant with 25 user licences, including Defender for Endpoint Plan 2 and Entra ID P2. The tenant lasts 90 days but renews automatically as long as you log in and use it.
-- **Azure free trial** gives you A$300 of credit for 30 days, plus a permanent free tier on selected services.
-- **Sentinel** itself bills on data ingestion. The free tier is **10 GB/day for the first 31 days** in any new workspace. After 31 days, you pay per GB ingested. For a single Windows VM and a couple of test users, you will be looking at well under 100 MB/day, which is functionally free even after the trial ends — but **delete the workspace when you are done with the lab** if you want absolute certainty.
+- **Microsoft 365 Developer Program** used to hand anyone a free E5 sandbox, but **that changed**. As of 2026 the free E5 developer sandbox is only available if you already qualify, for example with an active **Visual Studio Professional/Enterprise** subscription, ISV Success, AI Cloud Partner, or a Premier/Unified support plan, and **Microsoft requires a valid billing account to set it up (this can't be bypassed)**. So you can no longer assume a free E5 tenant from just a throwaway email, check the current [program terms](https://developer.microsoft.com/en-us/microsoft-365/dev-program) before you build this lab.
+- **Azure free account** gives you roughly **USD $200 of credit for 30 days** (quoted in your local currency at checkout, not a flat A$300) plus a permanent free tier on selected services. A credit card is required even though you won't be charged inside the free limits.
+- **Sentinel** itself bills on data ingestion. The free tier is **10 GB/day for the first 31 days** in any new workspace (subject to a 20-workspace-per-tenant limit). After 31 days you pay per GB ingested. For a single Windows VM and a couple of test users you'll be well under 100 MB/day, but **delete the Log Analytics workspace and its resource group when you're done** to be certain, and note that deleting Sentinel does *not* delete the underlying workspace.
+- **Timeline note:** Microsoft is retiring Sentinel from the *Azure* portal after **31 March 2027**; it will live only in the **Microsoft Defender portal**. The Azure-portal steps below still work today, but expect the UI to move.
 
-> ⚠️ **The two ways to get burned:** (1) leaving Defender for Endpoint enabled across multiple noisy machines, and (2) ingesting Azure Activity logs from a busy subscription. Neither applies to a clean lab tenant. Keep the lab small and you stay free.
+> ⚠️ **Where the real cost is:** leaving Defender for Endpoint enabled across multiple noisy machines ingests paid `Device*` tables. Note that **Azure Activity logs are a *free* data type**, so (contrary to a common warning) ingesting them does **not** cost you, even from a busy subscription. Keep the endpoint count small and you stay within the free allowance.
 
 ---
 
@@ -90,9 +90,11 @@ Sentinel pricing is scary if you do not know where the cliffs are. Here is what 
 
 ### 1.1 Create the M365 dev tenant
 
-Sign up at [developer.microsoft.com/microsoft-365/dev-program](https://developer.microsoft.com/microsoft-365/dev-program). Choose the **Instant sandbox** option — you get a tenant in about two minutes with 25 prepopulated test users and an `*.onmicrosoft.com` domain.
+Go to [developer.microsoft.com/microsoft-365/dev-program](https://developer.microsoft.com/microsoft-365/dev-program) and set up a Microsoft 365 E5 developer sandbox **if you qualify** (see the cost note above, you'll likely need a Visual Studio Pro/Enterprise subscription or another qualifying program, plus a billing account on file). When eligible you get a tenant with ~25 prepopulated test users and an `*.onmicrosoft.com` domain.
 
 Save the admin credentials somewhere sensible. You will use them constantly.
+
+> **If you don't qualify for a free E5 sandbox:** you can still do most of this lab with just an Azure free account and a standalone Windows VM, you'll have the Log Analytics workspace, Sentinel, Azure Activity and your own VM's data, but you won't have the Defender for Endpoint / Entra ID P2 signals that the E5 tenant provides. Adjust the data-source steps accordingly.
 
 ### 1.2 Activate the Azure trial against the same tenant
 
@@ -173,9 +175,9 @@ powershell.exe -EncodedCommand $enc
 
 Within 10 minutes you should see an incident in Sentinel.
 
-### Detection 2 - T1078: Impossible travel sign-in
+### Detection 2 - T1078: Multi-country sign-in (a simplified "impossible travel")
 
-A user signing in from two countries within a short window is a strong indicator of credential compromise. Entra ID Identity Protection does this natively but writing your own version is a great KQL exercise.
+A user signing in from two countries within a short window can indicate credential compromise. **Be precise about what this query actually does:** it flags a user who has successful sign-ins from **more than one country in the same hour**. That is *not* true "impossible travel", which calculates whether the time between two sign-ins is physically too short for the distance between their locations (speed = distance / time). Real impossible-travel detection (and the geo-velocity maths) is built into **Entra ID Identity Protection**; this query is a deliberately simpler teaching version. Call it a "multi-country sign-in" heuristic when you describe it, not travel-speed.
 
 ```kql
 let lookback = 1h;
@@ -192,7 +194,7 @@ SigninLogs
 
 ### Detection 3 - T1071.001: Beaconing to a rare external domain
 
-Command and control traffic often shows up as repeated, regular connections to a domain almost no other endpoint in the environment talks to. Real beacon detection is genuinely hard, but a simplified "rare destination + repeat connections" rule is a great teaching example.
+Command and control traffic often shows up as repeated, regular connections to a domain almost no other endpoint in the environment talks to. Real beacon detection is genuinely hard, and again, **be precise:** this query finds a destination that was hit **more than 10 times by exactly one device**. It does **not** measure *periodicity* (the regular, clock-like interval that real beaconing shows). A true beacon rule would look at the *time between* connections and flag suspiciously even spacing (low jitter). So this is a "rare, repeated destination" heuristic, a useful first approximation and a great thing to talk about *tuning*, not a periodicity-based beacon detector.
 
 ```kql
 let timeframe = 1h;

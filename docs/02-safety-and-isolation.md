@@ -119,6 +119,12 @@ Most likely nothing bad happened. But the habit of stopping, checking, and rever
 
 ## One more time
 
+
+
+![Target VM console showing internet blocked but the host-only lab network reachable](../assets/screenshots/starter-range/02-isolation-internet-blocked-lab-reachable.png)
+
+*Isolation in action on a host-only VM: pinging the internet (8.8.8.8) is blocked and DNS does not resolve, while the host-only lab gateway stays reachable. Test both directions, not just a failed ping.*
+
 Keep your vulnerable targets isolated. Use host-only networking. Snapshot before experimenting. When in doubt, power off and check.
 
 Now you can go build things: [VirtualBox Starter Range](03-virtualbox-starter-range.md)

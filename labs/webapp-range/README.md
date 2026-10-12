@@ -30,33 +30,62 @@ Deploy DVWA (Damn Vulnerable Web Application), perform basic web attacks (SQL in
 └──────────────┘                    └──────────────┘
 ```
 
+> **A note on addresses.** This lab uses the segmented scheme from [Network Design and Segmentation](../../docs/07-network-design-and-segmentation.md) (`10.10.10.0/24` for the attacker, targets on `10.10.20.0/24` or alongside). If you're still on the simple [VirtualBox starter range](../../docs/03-virtualbox-starter-range.md), your host-only network is `192.168.56.0/24` instead, so just substitute your target's actual IP (e.g. `192.168.56.20`) wherever you see `10.10.10.20`. The attack steps are identical either way.
+
 ## Build steps
 
 ### Step 1: Deploy DVWA
 
 On your target VM:
 
-**Option A: Docker (easier)**
+**Option A: Docker Compose (easier)**
 
-```bash
-# Install Docker if needed
-sudo apt update
-sudo apt install docker.io -y
-sudo systemctl start docker
-sudo systemctl enable docker
+The maintained DVWA image (`ghcr.io/digininja/dvwa`) does not bundle a database, so run it together with MariaDB using Compose. Save this as `dvwa-compose.yml` (a ready-to-run copy is in [`files/dvwa-compose.yml`](files/dvwa-compose.yml)):
 
-# Run DVWA
-sudo docker run -d -p 80:80 --name dvwa vulnerables/web-dvwa
+```yaml
+name: dvwa
+services:
+  dvwa:
+    image: ghcr.io/digininja/dvwa:latest
+    depends_on: [db]
+    environment:
+      DB_SERVER: db
+      DB_DATABASE: dvwa
+      DB_USER: dvwa
+      DB_PASSWORD: p@ssw0rd
+    ports: ["80:80"]
+  db:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: dvwa-root
+      MYSQL_DATABASE: dvwa
+      MYSQL_USER: dvwa
+      MYSQL_PASSWORD: p@ssw0rd
 ```
 
-**Option B: Manual install**
+```bash
+# Install Docker + the compose plugin if needed
+sudo apt update
+sudo apt install docker.io docker-compose-v2 -y
+sudo systemctl enable --now docker
+
+# Bring DVWA up (app + database)
+sudo docker compose -f dvwa-compose.yml up -d
+```
+
+**Option B: Manual install (LAMP)**
 
 ```bash
 sudo apt install apache2 mariadb-server php php-mysqli php-gd libapache2-mod-php -y
 cd /var/www/html
 sudo git clone https://github.com/digininja/DVWA.git
 sudo chown -R www-data:www-data DVWA
-# Follow DVWA setup instructions for database configuration
+# Create the DVWA config from the template and set the DB creds
+sudo cp DVWA/config/config.inc.php.dist DVWA/config/config.inc.php
+# Create the database + user in MariaDB:
+sudo mysql -e "CREATE DATABASE dvwa; CREATE USER 'dvwa'@'localhost' IDENTIFIED BY 'p@ssw0rd'; GRANT ALL ON dvwa.* TO 'dvwa'@'localhost'; FLUSH PRIVILEGES;"
+# Edit DVWA/config/config.inc.php so db_user='dvwa' and db_password='p@ssw0rd', then browse to
+# http://TARGET-IP/DVWA/setup.php and click "Create / Reset Database".
 ```
 
 ### Step 2: Verify DVWA is running
@@ -69,7 +98,15 @@ http://10.10.10.20/
 
 You should see the DVWA login page.
 
+![DVWA login page served by the maintained ghcr.io/digininja/dvwa image](../../assets/screenshots/webapp-range/dvwa-03-login.png)
+
+*The DVWA login page. Default credentials are `admin` / `password`.*
+
 Default credentials: `admin` / `password`
+
+![DVWA Setup / Create Database page](../../assets/screenshots/webapp-range/dvwa-00-setup-create-db.png)
+
+*Before you can log in, open **Setup / Reset DB** and click **Create / Reset Database** once. Beginners miss this and get a database error.*
 
 After logging in, go to "DVWA Security" and set security level to "Low" for this lab.
 
@@ -85,7 +122,7 @@ tail -f /var/log/apache2/access.log
 For Docker, logs go to stdout. View with:
 
 ```bash
-sudo docker logs -f dvwa
+sudo docker compose -f dvwa-compose.yml logs -f dvwa
 ```
 
 ### Step 4: Snapshot
@@ -116,6 +153,10 @@ Try another injection to extract data:
 
 **What you should see:** Usernames and password hashes from the database.
 
+![DVWA SQL injection returning all five users](../../assets/screenshots/webapp-range/dvwa-07-sqli-injection-result.png)
+
+*The `1' OR '1'='1` injection returns every user instead of one. Security level is Low (bottom of the page).*
+
 ### Attack step 2: Brute force login
 
 Navigate to: DVWA > Brute Force
@@ -134,7 +175,18 @@ Replace `YOUR_SESSION_ID` with your actual session cookie from the browser.
 
 **Note:** This is complex. Alternatively, use Burp Suite Intruder for a more visual approach.
 
+> **Tip, use a tiny list first.** `rockyou.txt` has ~14 million entries; for a quick, deterministic proof make a small list that ends in the right password and point hydra at that instead:
+> ```bash
+> printf '123456\npassword\nadmin\nletmein\npassword\n' > small.txt   # last line = the correct one for your lab
+> hydra -l admin -P small.txt 10.10.10.20 http-get-form "/vulnerabilities/brute/:username=^USER^&password=^PASS^&Login=Login:Username and/or password incorrect:H=Cookie: security=low; PHPSESSID=YOUR_SESSION_ID"
+> ```
+> Keep `rockyou.txt` for when you want a realistic run (you'll likely need to `gunzip /usr/share/wordlists/rockyou.txt.gz` first).
+
 **What you should see:** Hydra trying passwords until it finds the correct one.
+
+![DVWA Brute Force page](../../assets/screenshots/webapp-range/10-bruteforce.png)
+
+*The DVWA Brute Force login form you'll attack.*
 
 ### Attack step 3: Command injection
 
@@ -149,6 +201,10 @@ Enter:
 ```
 
 **What you should see:** The ping output followed by the contents of `/etc/passwd`. The semicolon let us append another command.
+
+![DVWA command injection showing id output appended to ping](../../assets/screenshots/webapp-range/dvwa-09-cmdinj-result.png)
+
+*Command injection: `127.0.0.1; id` runs `id` after the ping. The output shows `uid=33(www-data)`.*
 
 Try:
 
@@ -168,6 +224,10 @@ Enter:
 
 **What you should see:** A JavaScript alert box. In a real attack, this could steal cookies or redirect users.
 
+![DVWA reflected XSS rendering injected HTML](../../assets/screenshots/webapp-range/dvwa-10-xss-reflected.png)
+
+*Reflected XSS: injected HTML is rendered by the page. (Shown here with a visible heading payload rather than an alert so it captures in a screenshot.)*
+
 ### Success criteria
 
 You've successfully:
@@ -184,24 +244,30 @@ On the target, watch the access logs while attacking:
 
 ```bash
 # Docker
-sudo docker logs -f dvwa
+sudo docker compose -f dvwa-compose.yml logs -f dvwa
 
 # Manual install
 tail -f /var/log/apache2/access.log
 ```
 
-| What to find | What it looks like | What it indicates |
+| What to find | What it looks like in the access log | What it indicates |
 |--------------|-------------------|-------------------|
-| SQL injection attempts | `1' OR '1'='1` in URL | SQLi attack |
-| UNION-based extraction | `UNION SELECT` in URL | Data exfiltration attempt |
-| Many login attempts | Repeated POST to `/brute/` | Brute force |
-| Command injection | `; cat`, `; whoami` in params | OS command injection |
-| XSS payloads | `<script>` in parameters | XSS attempt |
+| SQL injection attempts | `GET /vulnerabilities/sqli/?id=1%27%20OR%20...` (the payload is URL-encoded in the query string) | SQLi attack |
+| UNION-based extraction | `UNION%20SELECT` in a GET query string | Data exfiltration attempt |
+| Brute force (DVWA low) | many `GET /vulnerabilities/brute/?username=...&password=...` from one IP | Brute force (this form uses GET, so each guess shows in the log) |
+| Reflected XSS | `%3Cscript%3E` in a GET query string | XSS attempt |
+
+> **Important, and a common beginner trap: a default access log does NOT capture POST bodies.** The DVWA
+> Command Injection page submits via **POST**, so the access log only shows `POST /vulnerabilities/exec/`
+> with **no payload** — you will not see `; cat` or `; whoami` there. To actually
+> capture command-injection payloads you need extra telemetry: application-level logging, a WAF, Apache
+> `mod_dumpio`, or endpoint auditing. GET-based attacks (SQLi, reflected XSS, this brute force) *are* fully
+> visible because the payload rides in the URL's query string.
 
 ### What good detection looks like
 
 You should be able to:
-1. See the malicious payloads in the logs
+1. See the **GET-based** payloads in the access log, and understand why the **POST-based** command injection is invisible there
 2. Identify the attacking IP
 3. See the pattern of attack (multiple attempts, different payloads)
 
@@ -215,12 +281,12 @@ For Wazuh or ELK, search for:
 
 ## Reset steps
 
-1. If using Docker:
+1. If using Docker Compose: the fastest reset is in the app (**Setup / Reset DB > Create / Reset Database**). For a full rebuild including the database volume:
    ```bash
-   sudo docker stop dvwa
-   sudo docker rm dvwa
-   sudo docker run -d -p 80:80 --name dvwa vulnerables/web-dvwa
+   sudo docker compose -f dvwa-compose.yml down -v
+   sudo docker compose -f dvwa-compose.yml up -d
    ```
+   (`-v` removes the database volume; without it the old data survives, because the database lives in the DB container, not the app container.)
 
 2. If manual install, revert to snapshot
 

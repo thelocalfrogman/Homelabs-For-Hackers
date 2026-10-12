@@ -1,12 +1,12 @@
 # Contributing to Homelabs for Hackers
 
-First up, thanks for being here. Whether you're fixing a typo, adding a lab scenario, or rewriting a whole guide because you found a better way to do something, it all helps. This project is built by people who tinker, and contributions from the community are what keep it useful.
+First, thank you for being here. Whether you're fixing a typo, adding a lab scenario, or rewriting a whole guide because you found a better way to do something, it all helps. This project is built by people who tinker, and contributions from the community are what keep it useful.
 
 ## Ways to contribute
 
 There's no contribution too small. Here's what we're always looking for:
 
-**Fix things.** Found a broken command? A screenshot that doesn't match the current UI? A step that skips something obvious? Open a PR. These fixes matter more than people think.
+**Fix things.** Found a broken command? A screenshot that doesn't match the current UI? A step that skips something obvious? Open a PR.
 
 **Write a lab.** If you've built a cool attack/defend scenario in your own range, turn it into a lab recipe. There's a [template](templates/lab-recipe-template.md) ready to go. Focused, repeatable labs that teach one thing well are worth more than sprawling ones that try to cover everything.
 
@@ -22,11 +22,11 @@ Have a look at the open issues to see if someone's already working on what you'r
 
 ## Style guide
 
-The docs in this repo try to carry a particular voice. It's conversational but not sloppy. Think "explaining something to a friend who's keen to learn rather than a post on LinkedIn.
+The docs in this repo try to carry a particular voice. It's conversational but not sloppy. Think "explaining something to a friend who's keen to learn" rather than a post on LinkedIn.
 
 A few things to keep in mind:
 - **Tone.** Write like you're talking to someone. If a sentence sounds weird when you say it out loud, rewrite it. Avoid corporate speak, marketing fluff, and unnecessary jargon. If you must use a technical term, explain it the first time.
-- **Language.** This is written in Australian English throughout. That means "virtualisation" not "virtualization", "colour" not "color", "defence" not "defense", "licence" (noun) not "license." Your spellchecker will fight you on this if you're using different settings.
+- **Language.** This is written in Australian English throughout. I won't set a mob of kangaroos on you if you don't, but Australian English is preferred, meaning "virtualisation" not "virtualization", "colour" not "color", "defence" not "defense", "licence" (noun) not "license." Your spellchecker will fight you on this if you're using different settings.
 - **Formatting.** Keep markdown clean and readable in source. Use code blocks for anything the reader needs to type or run. Use tables sparingly and only when they genuinely help.
 - **Accuracy over cleverness.** If something is complicated, say so. Don't oversimplify to the point of being wrong. It's fine to say "this is a bit fiddly" and then walk through it carefully.
 - **Safety first.** If your contribution involves network configuration, VM setup, or anything that could accidentally expose vulnerable machines, include explicit isolation warnings. We never assume the reader knows about the risks.
@@ -41,6 +41,8 @@ Good labs are:
 - **Repeatable.** Clear prerequisites, explicit steps, expected outputs. Someone following your lab on a fresh range should get the same results you did.
 - **Resettable.** Tell people how to get back to a clean state. Snapshot instructions, service restarts, whatever it takes.
 - **Educational.** Explain the "why" alongside the "how." If you're running a command, tell the reader what it does and why you chose it over alternatives.
+
+It isn't mandatory, but it helps so much if you can include screenshots.
 
 Include a difficulty label (🟢 Beginner, 🟡 Intermediate, 🔴 Advanced) and an estimated time.
 
@@ -69,4 +71,4 @@ Open an issue, start a discussion, or just submit the PR and we'll figure it out
 
 ---
 
-<sup>**A note on AI use in this project.** Parts of this repo were reviewed by, amended and drafted with the assistance of LLM's. Some files including guides, lab content, and documentation (including this file) were written collaboratively between the maintainer and an LLM, with the maintainer providing the technical information, architecture decisions, and review. AI was used as a writing, review and structuring tool, not as a substitute for hands-on knowledge. **All technical content** has been written by the maintainer. Contributors are welcome to use AI tools in their own contributions, but you must review and test everything thoroughly before submitting. If a command came from an LLM and you haven't run it yourself, don't submit it!</sup>
+<sup>**A note on AI use in this project.** Parts of this repo have been reviewed by, amended and drafted with the assistance of LLMs. Some files were also written collaboratively between a contributor and an LLM, with the contributor providing the technical information, architecture decisions, and review. AI can be used as a writing, review and structuring tool, not as a substitute for hands-on knowledge. **All technical content** has been written by the contributors. Contributors are welcome to use AI tools in their own contributions, but you must review and test everything thoroughly before submitting. If a command came from an LLM and you haven't run it yourself, don't submit it!</sup>

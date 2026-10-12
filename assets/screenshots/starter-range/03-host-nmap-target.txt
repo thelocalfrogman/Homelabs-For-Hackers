@@ -1,0 +1,4 @@
+# nmap -sV -Pn 192.168.56.20  (scanner: host on vboxnet0, stand-in for Kali attacker)
+# Example output: nmap 7.9x against an Ubuntu 24.04.5 target on a VirtualBox host-only network
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 9.6p1 Ubuntu 3ubuntu13.19 (Ubuntu Linux; protocol 2.0)

@@ -24,6 +24,8 @@ This is the $0 build. Everything here runs on your existing laptop or desktop us
 
 No internet access for the VMs (unless you temporarily enable it). No connection to your home LAN. Just your attacker and target, isolated and ready.
 
+> **A note on versions.** This guide was built and screenshotted on VirtualBox 7.2 with Ubuntu Server 24.04.5 LTS as the target. UIs and interface names drift between versions, so treat the exact filenames and screenshots as a guide, not a promise, and always check what your own machine actually shows.
+
 ## Prerequisites
 
 - VirtualBox installed ([download here](https://www.virtualbox.org/wiki/Downloads))
@@ -49,6 +51,10 @@ First, set up the isolated network your VMs will share.
 
 You now have an isolated network called something like `vboxnet0`. Remember this name.
 
+![VirtualBox Network Manager showing the host-only network vboxnet0 on 192.168.56.1/24 with DHCP enabled](../assets/screenshots/virtualbox/03-network-manager-hostonly.png)
+
+*File > Tools > Network Manager (shortcut Ctrl+H). Here `vboxnet0` is 192.168.56.1/24. Note the DHCP server is enabled by default on VirtualBox 7.x.*
+
 ## Step 2: Build the attacker VM (Kali)
 
 ### Create the VM
@@ -70,6 +76,18 @@ You now have an isolated network called something like `vboxnet0`. Remember this
    - Attached to: **Host-only Adapter**
    - Name: `vboxnet0` (or whatever your host-only network is called)
 
+![VirtualBox VM Settings, Storage tab, showing the empty optical drive where you attach the ISO](../assets/screenshots/virtualbox/07-settings-storage-attach-iso.png)
+
+*Settings > Storage. Click the empty optical drive, then the small disc icon on the right to attach your ISO.*
+
+![VirtualBox VM Settings, Network tab, the Attached to dropdown](../assets/screenshots/virtualbox/08-settings-network-adapter.png)
+
+*Settings > Network > Adapter 1. Set **Attached to** = Host-only Adapter and pick `vboxnet0`.*
+
+![VirtualBox New Virtual Machine wizard: name, ISO image, OS type and version](../assets/screenshots/virtualbox/04-new-vm-wizard.png)
+
+*The New Virtual Machine wizard (toolbar **New**, or Ctrl+N). Set the name, pick your ISO, and choose the OS type/version. The hardware and disk are set on the next pages.*
+
 ### Install Kali
 
 1. Start the VM
@@ -80,16 +98,31 @@ You now have an isolated network called something like `vboxnet0`. Remember this
 6. Finish installation and reboot
 7. Remove the ISO from the virtual CD drive when prompted (or do it manually in Settings)
 
+The Kali installer is a graphical Debian installer; click through the language, location, user and partitioning screens, accepting the defaults where you're unsure.
+
 ### Post-install
 
-Log in and open a terminal:
+Log in and open a terminal.
+
+> **Note.** Current Kali images manage networking with **NetworkManager**, not the old `/etc/network/interfaces` file, and the interface may not be `eth0`. The `/etc/network/interfaces` method below is kept for reference but can silently do nothing on a modern Kali where NetworkManager owns the interface. Check your interface name first with `ip -o link show`, and prefer setting the static address through NetworkManager (`nmtui`, or `nmcli`), for example:
+>
+> ```bash
+> # Find your interface and your NetworkManager connection name first
+> ip -o link show
+> nmcli con show            # note the NAME (often "Wired connection 1")
+> # Set a static IP on that connection (use the name from nmcli con show)
+> sudo nmcli con mod "Wired connection 1" ipv4.addresses 192.168.56.10/24 ipv4.method manual
+> sudo nmcli con up "Wired connection 1"
+> ```
+
+The older method (works only if your Kali still uses `ifupdown`):
 
 ```bash
 # Set a static IP (optional but recommended)
 sudo nano /etc/network/interfaces
 ```
 
-Add:
+Add (replace `eth0` with your real interface name):
 ```
 auto eth0
 iface eth0 inet static
@@ -102,7 +135,7 @@ Then:
 sudo systemctl restart networking
 ```
 
-Verify:
+Verify (swap in your interface name):
 ```bash
 ip addr show eth0
 ```
@@ -143,30 +176,68 @@ This is your clean attacker VM. Snapshot it.
 4. Create a user. For a lab target, simple creds are fine: `labuser` / `labpass`
 5. Finish installation
 
+The Ubuntu Server installer is keyboard-driven, navigate with the arrow keys, Tab and Enter:
+
+![Ubuntu Server installer language selection](../assets/screenshots/starter-range/05-ubuntu-install-language.png)
+
+*Step 1 of the installer: choose your language.*
+
+![Ubuntu installer: choose the type of installation](../assets/screenshots/starter-range/07-ubuntu-install-type.png)
+
+*Choose "Ubuntu Server" (the default).*
+
+![Ubuntu installer: guided storage, use an entire disk](../assets/screenshots/starter-range/08-ubuntu-install-storage.png)
+
+*Guided storage: "Use an entire disk" is the easy choice for a lab VM. Later you'll create the `labuser` profile and (recommended) tick "Install OpenSSH server".*
+
 ### Post-install
 
+First, find your interface name and your netplan file. Don't assume either, they vary by Ubuntu version and by how many adapters the VM has.
+
 ```bash
-# Set static IP
-sudo nano /etc/netplan/00-installer-config.yaml
+# Which interfaces exist? (your host-only adapter is usually the second one)
+ip -o link show
+# Which netplan file is in use?
+ls /etc/netplan/
 ```
 
-Replace contents with:
+On a current Ubuntu Server 24.04 install you'll typically see interfaces `enp0s3` (first adapter) and `enp0s8` (second adapter), and a single netplan file called `50-cloud-init.yaml` (not the older `00-installer-config.yaml` some guides mention). If your target has only one adapter, it'll be `enp0s3`. Use whatever names *your* machine actually shows.
+
+On 24.04 the network is managed by cloud-init, so to make a static address stick you also need to stop cloud-init from rewriting the file on reboot:
+
+```bash
+# Stop cloud-init from managing the network
+echo "network: {config: disabled}" | sudo tee /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+
+# Edit the netplan file you found above (adjust the filename and interface name to match yours)
+sudo nano /etc/netplan/50-cloud-init.yaml
+```
+
+Replace the contents with (swap `enp0s8` for your host-only interface):
 ```yaml
 network:
   version: 2
   ethernets:
-    enp0s3:
+    enp0s8:
+      dhcp4: false
       addresses:
         - 192.168.56.20/24
 ```
 
-Apply:
+netplan is fussy about permissions, so lock the file down, then apply:
 ```bash
+sudo chmod 600 /etc/netplan/50-cloud-init.yaml
 sudo netplan apply
-ip addr
+ip -o -4 addr show
 ```
 
-You should see `192.168.56.20`.
+You should see `192.168.56.20` on your host-only interface, with `valid_lft forever` (a static lease, not DHCP). Reboot once and check it again to confirm the address survives a restart.
+
+![Guest interfaces enp0s3 and enp0s8, and the 50-cloud-init.yaml netplan file, shown on the Ubuntu 24.04 target console](../assets/screenshots/starter-range/01-guest-interfaces-and-netplan.png)
+
+*The target's real interfaces and netplan file. Note the second adapter `enp0s8` (host-only) and the `50-cloud-init.yaml` filename.*
+
+> **Heads up on host-only DHCP.** On VirtualBox 7.x the host-only network often has a DHCP server enabled by default, which will hand your VM an address in the `192.168.56.101`–`192.168.56.254` range before you set anything static. That's harmless, but it's why you might see a `.101` address on first boot. Setting a static IP as above overrides it.
 
 ### Make it a bit vulnerable (optional)
 
@@ -211,6 +282,12 @@ nmap -sV 192.168.56.20
 ```
 
 You should see the SSH port (22) open.
+
+
+
+![VirtualBox Manager Details pane for the target VM, showing Adapter 1 NAT and Adapter 2 Host-only Adapter vboxnet0](../assets/screenshots/virtualbox/01-vm-details-ubuntu-target.png)
+
+*The target VM in VirtualBox Manager. The Network section shows Adapter 1 on NAT (for the provisioning phase) and Adapter 2 on the Host-only Adapter `vboxnet0` (the isolated range network).*
 
 Congratulations. You have a functional cyber range.
 

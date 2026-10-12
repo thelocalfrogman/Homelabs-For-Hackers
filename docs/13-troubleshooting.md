@@ -76,12 +76,16 @@ VMs aren't getting IP addresses automatically.
 ### Still not working?
 
 ```bash
-# On the VM, release and renew
-sudo dhclient -r
-sudo dhclient eth0
+# Find your interface name first (don't assume eth0)
+ip -o link show
 
-# Or on newer systems
-sudo dhcpcd eth0
+# On distros that still use dhclient (swap eth0 for your interface):
+sudo dhclient -r && sudo dhclient <iface>
+
+# On current Ubuntu (netplan + systemd-networkd), re-apply the config instead:
+sudo netplan apply
+# or restart the networkd-managed link:
+sudo networkctl reconfigure <iface>
 ```
 
 Check if another DHCP server is responding (you might have duplicate DHCP servers on the network).

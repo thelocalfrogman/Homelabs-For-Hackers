@@ -15,7 +15,7 @@ GNS3 lets you:
 
 ## When to use GNS3
 
-If all you need is two VMs talking to each other, VirtualBox with a host-only network will get you there faster. But GNS3's VirtualBox integration is no longer supported, so if you're building anything with network infrastructure between your VMs, it's worth going straight to GNS3 with QEMU from the start.
+If all you need is two VMs talking to each other, VirtualBox with a host-only network will get you there faster. GNS3 does still include VirtualBox integration, but it's de-prioritised and less actively maintained in favour of QEMU (more on this below). So if you're building anything with network infrastructure between your VMs, it's worth going straight to GNS3 with QEMU from the start.
 
 | Use case | Approach |
 |----------|----------|
@@ -28,87 +28,36 @@ If all you need is two VMs talking to each other, VirtualBox with a host-only ne
 
 ## Installation
 
-GNS3 runs differently depending on your platform. The key difference is how QEMU (the engine that runs your VMs) operates.
+GNS3 runs differently depending on your platform, and the exact install steps (package names, repositories, bundled components) change often enough that copying them here would just go stale. So this section explains **what you're installing and why**, and sends you to the official docs for the current, exact steps. Always follow the official installation guide for your platform, and treat the notes here as the background that makes those steps make sense.
 
-**DISCLAIMER:** These instructions are current as of 27/02/2026. Maintainers will endeavour to keep the below instructions up-to-date but software changes all the time. ALWAYS refer to the offical documentation as well as this.
+- [Official GNS3 Linux installation docs](https://docs.gns3.com/docs/getting-started/installation/linux)
+- [Official GNS3 Windows installation docs](https://docs.gns3.com/docs/getting-started/installation/windows)
 
-### Linux Installation (Recommended)
-[Offical GNS3 Linux installation documentation](https://docs.gns3.com/docs/getting-started/installation/linux/).
+### Linux (recommended)
 
-On Linux, GNS3 runs QEMU/KVM natively on your host. This gives you near-native VM performance since KVM uses hardware virtualisation directly. No extra VM layer needed.
+On Linux, GNS3 runs QEMU/KVM natively on your host. VMs run with near-native performance because KVM uses hardware virtualisation directly, with no extra VM layer in between. That's what makes Linux the smoothest platform for GNS3.
 
-```bash
-sudo add-apt-repository ppa:gns3/ppa
-sudo apt update
-sudo apt install gns3-gui gns3-server
-```
+Follow the [official Linux install docs](https://docs.gns3.com/docs/getting-started/installation/linux) for your distribution (they cover Ubuntu, Debian via `pipx`, and Arch via the AUR). A few things worth knowing going in:
 
-You'll need to add your user to several groups for proper permissions:
+- Installation adds your user to a few groups (for ubridge, libvirt, KVM, and Wireshark packet capture). Log out and back in afterwards so the group membership takes effect. The official docs list the exact groups.
+- GNS3 needs hardware virtualisation (VT-x/AMD-V) enabled in your BIOS/UEFI. If KVM acceleration isn't available, turn it on there.
+- You'll want the QEMU tools on your host, since the disk-image steps later in this guide use `qemu-img`. They often come in as a dependency, but if `qemu-img` is missing, install your distro's QEMU packages (on Ubuntu/Debian, `qemu-system-x86` and `qemu-utils`).
+- When you launch GNS3 for the first time, choose **Run appliances on my local computer**. The local server handles everything, and your QEMU VMs run directly on your hardware with KVM acceleration.
 
-```bash
-sudo usermod -aG ubridge,libvirt,kvm,wireshark $(whoami)
-```
+### Windows
 
-Log out and back in for group changes to take effect.
+On Windows, QEMU can't use KVM, so running VMs directly on the host is slow. Instead, GNS3 uses the **GNS3 VM** — a lightweight Linux VM that runs the GNS3 server and QEMU/KVM inside it, with your Windows GNS3 client connecting to it as the compute backend. That extra moving part is the main difference from the Linux setup.
 
-Verify KVM support is available:
+If you're just starting out, the simplest path is the GNS3 GUI installer (let it install all bundled components) together with the GNS3 VM. The [official Windows install docs](https://docs.gns3.com/docs/getting-started/installation/windows) and the [GNS3 VM install docs](https://docs.gns3.com/docs/getting-started/installation/download-gns3-vm) have the current steps.
 
-```bash
-kvm-ok
-```
+You have two choices for running the GNS3 VM, and the trade-off matters more than the exact clicks:
 
-If `kvm-ok` reports that KVM acceleration can be used, you're set. If not, enable virtualisation (VT-x/AMD-V) in your BIOS/UEFI.
+- **VMware Workstation (recommended).** The more battle-tested path for GNS3, with fewer quirks. VMware Workstation Pro is free for personal use.
+- **Hyper-V.** Built into Windows 10/11 Pro and Enterprise, and works well, but occasionally has networking edge cases.
 
-Install QEMU if it wasn't pulled in as a dependency:
+Whichever you pick, the one thing that must be right is **nested virtualisation**: the GNS3 VM has to expose VT-x/AMD-V to its own guests so that KVM works *inside* it. In VMware that's the "Virtualize Intel VT-x/EPT or AMD-V/RVI" processor option; in Hyper-V it's `Set-VMProcessor -ExposeVirtualizationExtensions $true`. Give the VM plenty of RAM and at least 2 CPUs, since every lab VM runs inside it.
 
-```bash
-sudo apt install qemu-system-x86 qemu-utils
-```
-
-When you launch GNS3 for the first time, choose **Run appliances on my local computer**. The local GNS3 server will handle everything, and QEMU VMs will run directly on your hardware with KVM acceleration.
-
-### Windows Installation
-[Offical GNS3 Windows installation documentation](https://docs.gns3.com/docs/getting-started/installation/windows).
-
-The simplest method is via the GNS3 GUI installer. The instructions for this are in the offical documentation linked above and if you're just starting out I would recommend simply doing that. Otherwise you can follow the standalone GNS3 VM instructions below.
-
-#### GNS3 VM
-The offical GNS3 VM instructions can be found [here](https://docs.gns3.com/docs/getting-started/installation/download-gns3-vm).
-
-On Windows, QEMU doesn't have access to KVM, so running VMs directly on the host can be slow. Instead, GNS3 uses the **GNS3 VM** — a lightweight Linux VM that runs the GNS3 server and QEMU/KVM inside it. Your Windows GNS3 client connects to this VM as its compute backend.
-
-You have two options for running the GNS3 VM on Windows:
-
-> **Note:** The GNS3 VM can technically run in VirtualBox as well, but VirtualBox's nested virtualisation support is limited and less reliable compared to VMware or Hyper-V, which can result in poor performance or KVM failing to initialise inside the GNS3 VM.
-
-**Option A: VMware Workstation (recommended)**
-
-1. Download and install [GNS3](https://www.gns3.com/software/download) — during installation, let it install all bundled components
-2. Download the **GNS3 VM** from the same download page (grab the VMware version, it's a `.ova` file)
-3. Install [VMware Workstation Pro](https://www.vmware.com/products/workstation-pro.html) (free for personal use)
-4. Import the GNS3 VM `.ova` into VMware: **File > Open**, select the `.ova`
-5. Before booting, adjust the VM settings:
-   - Give it at least 4 GB RAM (more is better — this VM runs all your lab VMs inside it)
-   - Allocate at least 2 CPU cores
-   - Enable **Virtualize Intel VT-x/EPT or AMD-V/RVI** under Processors (this enables nested virtualisation so QEMU inside the VM can use KVM)
-6. Boot the GNS3 VM. It will display an IP address on the console
-7. In the GNS3 client: **Edit > Preferences > Server > GNS3 VM**, select VMware as the virtualisation engine, and it should auto-detect the running VM
-
-**Option B: Hyper-V**
-
-If you're on Windows 10/11 Pro or Enterprise, Hyper-V is built in. Note that Hyper-V and VMware Workstation can coexist on modern versions, but if you'd rather use Microsoft's hypervisor:
-
-1. Enable Hyper-V: **Settings > Apps > Optional Features > More Windows Features > Hyper-V**
-2. Download the Hyper-V version of the GNS3 VM (`.zip` containing a `.vhdx`)
-3. In Hyper-V Manager, create a new VM pointing to the downloaded disk
-4. Enable nested virtualisation for the VM in an elevated PowerShell:
-   ```powershell
-   Set-VMProcessor -VMName "GNS3 VM" -ExposeVirtualizationExtensions $true
-   ```
-5. Allocate RAM and CPUs as above
-6. Boot and configure in GNS3 client the same way
-
-**Which to choose?** VMware is the more battle-tested path for GNS3 and generally has fewer quirks. Hyper-V works well too but occasionally has networking edge cases. Either way, the key is enabling nested virtualisation so KVM works inside the GNS3 VM.
+> **Note:** The GNS3 VM can technically run in VirtualBox too, but VirtualBox's nested virtualisation is more limited and less reliable than VMware or Hyper-V, which can mean poor performance or KVM failing to initialise inside the GNS3 VM.
 
 ## Running VMs in GNS3 with QEMU
 
@@ -242,19 +191,18 @@ For this guide, we'll assume you're using something like VyOS or a simple Linux 
 
 Start all devices (right-click > Start, or the green play button).
 
-**On the router** (exact commands depend on your router image, this is pseudocode):
+**On the router.** Router syntax is vendor-specific, so pick one appliance and use *its* commands, don't mix them. We recommend **VyOS** (free, open source, easy to obtain). These are the real VyOS commands for this topology (open the VyOS console and log in as `vyos`/`vyos`):
 
+```bash
+configure
+set interfaces ethernet eth0 address 10.0.1.1/24
+set interfaces ethernet eth1 address 10.0.2.1/24
+commit
+save
+exit
 ```
-# Interface to LAN A
-interface eth0
-  ip address 10.0.1.1/24
-  no shutdown
 
-# Interface to LAN B  
-interface eth1
-  ip address 10.0.2.1/24
-  no shutdown
-```
+> If you use a different appliance the idea is the same but the syntax differs. For example, on a Cisco IOS router it would be `interface GigabitEthernet0/0` / `ip address 10.0.1.1 255.255.255.0` / `no shutdown` in global config mode. Don't copy the VyOS commands into a Cisco device or vice versa.
 
 **On PC-A** (double-click to open console):
 

@@ -1,0 +1,24 @@
+# DVWA (Damn Vulnerable Web Application) + MariaDB.
+# The maintained ghcr.io/digininja/dvwa image does NOT bundle a database, so it runs
+# alongside MariaDB here. Bring it up with:  docker compose -f dvwa-compose.yml up -d
+# then open http://TARGET-IP/ , go to "Setup / Reset DB", click "Create / Reset Database",
+# log in as admin/password, and set DVWA Security to "Low".
+name: dvwa
+services:
+  dvwa:
+    image: ghcr.io/digininja/dvwa:latest
+    depends_on: [db]
+    environment:
+      DB_SERVER: db
+      DB_DATABASE: dvwa
+      DB_USER: dvwa
+      DB_PASSWORD: p@ssw0rd
+    ports:
+      - "80:80"
+  db:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: dvwa-root
+      MYSQL_DATABASE: dvwa
+      MYSQL_USER: dvwa
+      MYSQL_PASSWORD: p@ssw0rd

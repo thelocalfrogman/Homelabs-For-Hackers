@@ -114,6 +114,10 @@ PORT   STATE SERVICE VERSION
 22/tcp open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.1
 ```
 
+![nmap -sV service scan run from Kali against a lab target](../../assets/screenshots/kali/04-nmap-scan.png)
+
+*`nmap -sV` run from the Kali attacker against a target on the isolated range network.*
+
 ### Attack step 3: More aggressive scan
 
 Let's get more information:
@@ -151,14 +155,23 @@ While running scans, check what the target sees:
 
 On the target VM:
 ```bash
-# Watch network connections in real time
-watch -n 1 'ss -tuln'
+# See what's LISTENING (note: this shows your own services, not the scan itself)
+ss -tuln
 
-# Check auth log for any connection attempts
-tail -f /var/log/auth.log
+# The most reliable way to actually see a scan hit the box: capture packets
+sudo tcpdump -ni any "src 192.168.56.10 and (tcp[tcpflags] & tcp-syn != 0)"
+
+# Service logs only capture connections that reach a running service
+sudo tail -f /var/log/auth.log
 ```
 
-You should see connection attempts from the attacker IP.
+**What you'll actually see (and what you won't).** This trips a lot of people up, so be precise about it:
+
+- `ss -tuln` lists *listening* sockets (your SSH server on `:22`). It does **not** show the scan's incoming connections, which are far too short-lived to catch this way.
+- A plain port scan is **not** an authentication attempt. Scanning SSH does not create a "failed login" event. The most you'll see in `auth.log` is a single line like `sshd[...]: Connection closed by 192.168.56.10 port ...` when the scan opens and drops a TCP connection to port 22. Scans of **closed** ports (where nothing is listening) produce **nothing** in `auth.log` at all.
+- To genuinely *see* a scan, use a packet capture (the `tcpdump` above) or your firewall logs. This is exactly why the firewall and SIEM parts of the range matter: the host's own service logs are nearly blind to reconnaissance.
+
+(On Ubuntu 24.04.5, a `-sT`/`-sV` scan of port 22 produces a single `Connection closed by` line and no authentication event; closed ports log nothing.)
 
 ### From the firewall's perspective (if you have one)
 

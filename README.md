@@ -4,7 +4,7 @@ A practical guide to building your own cyber range. No rack required. No prior e
 
 ## So what's a cyber range?
 
-Think of it as your own personal playground for learning how to break into things and how to spot when someone's breaking into yours. You build networks, attack them, watch the alerts fire, then burn it all down and do it again. It's how the pros train, and there's absolutely nothing stopping you from having one at home.
+Think of it as your own personal playground for learning how to break into things and how to spot when someone's breaking into yours. You build networks, attack them, watch the alerts fire, then burn it all down and do it again. It's how the "pros" 🤓 train, and there's absolutely nothing stopping you from having one at home!
 
 This repo walks you through building a range from nothing. By the end you'll have an isolated network with attackers, vulnerable targets, and basic detection. You'll run attack scenarios, watch them light up in your logs, and reset the whole thing in minutes.
 
@@ -44,11 +44,11 @@ This bit matters. Don't skip it!
 
 <!-- 
   ctf{stage2}
-  Nice. You read the source.
+  Nice work.
   
   Fragment [2/4]: "range"
   
-  Next: I gave a talk at a conference in a regional Victorian city.
+  Next: In 2025, I gave a talk at a conference in a regional Victorian city.
   The talk was about building something with almost nothing.
   Find the conference, find the city, and combine them:
   
@@ -72,15 +72,15 @@ templates/      # Blank templates for your own labs
 
 ## Contributing
 
-This repo is beginner friendly. If you've built something cool, fixed a typo, added an explanation, or written a lab scenario, I want it in here! See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
+The community is full of people more talented and knowledgeable than me. Please contribute your knowledge! If you've built something cool, fixed a typo, added an explanation, or written a lab scenario, I want it in here! See [CONTRIBUTING.md](CONTRIBUTING.md) for the details.
 
 Found a bug or got stuck? Come find me:
 
 > **Email:** georgeferres@proton.me<br>
 > **LinkedIn:** [linkedin.com/in/georgeferres](https://www.linkedin.com/in/georgeferres/)
 
-No question is too basic. Seriously.
+No question is too basic.
 
 ## Licence
 
-MIT. Use it, fork it, teach with it, build on it.
+MIT. Use it, fork it, teach with it, build on it!

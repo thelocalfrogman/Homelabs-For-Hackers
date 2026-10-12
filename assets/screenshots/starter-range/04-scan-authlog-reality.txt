@@ -1,0 +1,13 @@
+# What a port scan actually produces on the target
+# Scanner: host 192.168.56.1 ; Target: Ubuntu 24.04.5 192.168.56.20
+# Commands: nmap -sT -p22,80,443 192.168.56.20 ; nmap -sV -p22 192.168.56.20
+
+# The ONLY auth.log line attributable to the scan:
+sshd[959]: Connection closed by 192.168.56.1 port 40266
+
+# Observations:
+# - sshd (port 22) logs a minimal "Connection closed by <ip>" when a scan opens and
+#   drops a TCP connection. This is NOT an authentication event (no 4625-equivalent).
+# - Scans of CLOSED ports (80/443 here) produce NOTHING in auth.log.
+# - `ss -tuln` shows only LISTENING sockets (0.0.0.0:22). It does NOT reveal the scan's
+#   transient inbound connections. Use a packet capture (tcpdump) or firewall logs to see a scan.
